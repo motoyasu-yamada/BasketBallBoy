@@ -1,0 +1,35 @@
+{
+  "engineVersion": "5.2.11",
+  "compilerVersion": "5.2.11",
+  "template": {},
+  "target": {
+    "current": "web"
+  },
+  "modules": [
+    {
+      "name": "egret"
+    },
+    {
+      "name": "game"
+    },
+    {
+      "name": "tween"
+    },
+    {
+      "name": "assetsmanager"
+    },
+    {
+      "name": "promise"
+    },
+    {
+      "name": "physics",
+      "path": "../libsrc"
+    }
+  ],
+  "targets": {
+    "android": {
+      "appname": "bbb",
+      "packagename": "com.spicysoft.bbb"
+    }
+  }
+}

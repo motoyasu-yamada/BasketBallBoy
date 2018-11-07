@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width, user-scalable=no, minimal-ui">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="full-screen" content="yes" />
+    <meta name="screen-orientation" content="portrait" />
+    <link href="css/style.css" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Lato:300" rel="stylesheet">
+</head>
+
+<body id="body">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="./js/liberapp.sdk.js"></script>
+    <script src="./js/game.js"></script>
+
+    <h1 class="title">Reversi</h1>
+
+    <div id="game_screen" class="page" style="display: block"></div>
+      <div class="game_info">
+        <p id="turn_text"><span id="current_player"></span>さんの番です。</p>
+      </div>
+      <div id="game_board"></div>
+      <div class="player_info">
+        
+        <div class="player">
+          <p class="name white" id="name_white">待機中・・・</p>
+        </div>
+        <div class="player">
+          <p class="name black" id="name_black">待機中・・・</p>
+        </div>
+
+        <div class="button_box">
+          <p class="button">
+            <a href="#" onclick="live();">LIVE</a>
+          </p>
+
+          <p class="button">
+            <a href="#" onclick="share();">SHARE</a>
+          </p>
+
+        </div>
+      </div>
+    </div>
+    <div id="result_screen" class="page" style="display: none">
+      <div class="game_info">
+        <p>白:<span id="white_count">0</span> 黒:<span id="black_count">0</span> <span id="winner">●●</span>の勝ちです。</p>
+      </div>
+      <div id="last_board"></div>
+      <div class="player">
+        <p class="name white" id="name_white_result">プレイヤーネーム</p>
+      </div>
+      <div class="player">
+        <p class="name black" id="name_black_result">相手の名前</p>
+      </div>
+      <p class="button">
+        <a href="#" onclick="close();">CLOSE</a>
+      </p>
+    </div>
+
+<script type="text/javascript">
+  window.onload = () => {
+    boot();
+  } 
+</script>
+
+</body>
+
+
+</html>
