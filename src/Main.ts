@@ -1,5 +1,10 @@
 const BASKET_SIZE_METER = 0.15;
 const BALL_SIZE_METER = 0.6;
+const FPS = 60;
+
+let ground: Ground;
+let timeGauge: TimeGauge;
+let ball: Ball;
 
 class Main extends egret.DisplayObjectContainer {
     public constructor() {
@@ -10,22 +15,22 @@ class Main extends egret.DisplayObjectContainer {
     private onAddToStage(event: egret.Event) {
         const ballPixel = egret.MainContext.instance.stage.stageWidth / 10;
         GameWorld.init(ballPixel / BALL_SIZE_METER,this.stage);
+
         new Sky();
-        new Ground();
-        const timeGauge = new TimaeGauge();
+
+        ground = new Ground();
+        timeGauge = new TimeGauge();
         timeGauge.reset();
-        const  ball = new Ball();
+
+        ball = new Ball();
         this.stage.addEventListener(egret.TouchEvent.TOUCH_BEGIN, (e: egret.TouchEvent) => ball.up(), this);
-        let lastBasketCreation = 2000;
-        GameWorld.start((dt) => {
-            lastBasketCreation += dt;
-            const gn = Math.random();
-            if (2000 < lastBasketCreation && gn < 0.05) {
-                new Basket();
-                lastBasketCreation = 0;
-            }            
-        });
+
+        const basketManager = new BasketManager();
+
+        GameWorld.start();
     }
+
+
 }
 
 function random(min:number, max:number) {
@@ -36,12 +41,22 @@ class GameWorld {
     public static world: p2.World;
     private static pixelPerMeter: number;
     private static meterPerPixel: number;
-    public static objects: GameObject[] = [];
+    private static objects: GameObject[] = [];
+    private static physicsObjects: {[id:number]: PhysicsObject; } = {};
     public static stageHeight: number;
     public static stageWidth: number;
     public static stageHeightMeter: number;
     public static stageWidthMeter: number;    
     public static displayObjectContainer: egret.DisplayObjectContainer;
+
+    static addGameObject(o: GameObject) {
+        this.objects.push(o);  
+    }
+
+    static addPhysicsObject(o: PhysicsObject) {
+        this.world.addBody(o.body);
+        this.physicsObjects[o.id] = o;
+    }
 
     static pixelToMeter(pixel: number) : number {
         return pixel / this.pixelPerMeter;
@@ -74,15 +89,42 @@ class GameWorld {
         this.world = world;
     }
 
-    static start(globalProcess:(deltaMilliseconds:number) => void) {
-        const loop = (deltaTime: number) => {
-            if (deltaTime < 10) {
+    static start() {
+        this.world.on("impact",(evt) => {
+            const a: PhysicsObject = this.physicsObjects[evt.bodyA.id];
+            const b: PhysicsObject = this.physicsObjects[evt.bodyB.id];
+            if (a.onImpact(b) === false) {
                 return;
             }
-            if (deltaTime > 1000) {
+            if (b.onImpact(a) === false) {
                 return;
             }
+        });
 
+        this.world.on("beginContact",(evt:any) => {
+            const a: PhysicsObject = this.physicsObjects[evt.bodyA.id];
+            const b: PhysicsObject = this.physicsObjects[evt.bodyB.id];
+            if (a.onBeginContact(b,evt.shapeA,evt.shapeB) === false) {
+                return;
+            }
+            if (b.onBeginContact(a,evt.shapeB,evt.shapeA) === false) {
+                return;
+            }
+        });
+
+        this.world.on("endContact",(evt:any) =>{
+            const a: PhysicsObject = this.physicsObjects[evt.bodyA.id];
+            const b: PhysicsObject = this.physicsObjects[evt.bodyB.id];
+            if (a.onEndContact(b,evt.shapeA,evt.shapeB) === false) {
+                return;
+            }
+            if (b.onEndContact(a,evt.shapeB,evt.shapeA) === false) {
+                return;
+            }
+        });
+
+        const loop = (e: egret.Event) => {
+            const deltaTime = 1000 / FPS;
             this.world.step(1/60, deltaTime / 1000, 10);
             const l = this.objects.length;
             for (let i: number = 0; i < l; i++) {
@@ -96,12 +138,10 @@ class GameWorld {
             for (let i: number = 0; i < l; i++) {
                 const o = this.objects[i];
                 if (o.inited && !o.toDelete) {
-                    o.process(deltaTime);
+                    o.process();
                 }
             }    
-            if (globalProcess) {
-                globalProcess(deltaTime);
-            }
+
             for (let i: number = 0; i < l; i++) {
                 const o = this.objects[i];
                 if (o.toDelete) {
@@ -112,6 +152,7 @@ class GameWorld {
                     o.update();
                 }
             }
+
             if (!someoneIsDeleted) {
                 return;
             }
@@ -123,7 +164,8 @@ class GameWorld {
                 return false;
             });       
         };
-        egret.Ticker.getInstance().register(loop, this.displayObjectContainer);
+        
+        this.displayObjectContainer.addEventListener(egret.Event.ENTER_FRAME, loop, this);
     }
 }
 
@@ -132,11 +174,11 @@ abstract class GameObject {
     toDelete:boolean = false;
     inited:boolean = false;
 
-    constructor() {
-        GameWorld.objects.push(this);        
+    constructor() {  
+        GameWorld.addGameObject(this);  
     }
 
-    init() {
+    init() {  
         this.resetDisplay();
         this.inited = true;        
     }
@@ -146,12 +188,17 @@ abstract class GameObject {
             GameWorld.displayObjectContainer.removeChild(this.display);
             this.display = null;
         }
-        this.display = this.createDisplay();     
-        GameWorld.displayObjectContainer.addChild(this.display);
+        this.display = this.createDisplay();   
+        if (this.display) { 
+            GameWorld.displayObjectContainer.addChild(this.display);
+        }
     }
 
-    abstract createDisplay() : egret.DisplayObject;
-    abstract process(deltaMilliseconds:number) : void;
+    createDisplay() : egret.DisplayObject {
+        return null;
+    }
+
+    abstract process() : void;
 
     update() {}
 
@@ -165,18 +212,22 @@ abstract class GameObject {
 }
 
 abstract class PhysicsObject extends GameObject {
-    protected body: p2.Body;
+    public body: p2.Body;
 
     constructor() {
         super();
     }
 
+    get id(): number {
+        return this.body.id;
+    }
+
     init() {
-        super.init();
         this.body = new p2.Body(this.options());
         this.addShapeToBody();
         this.body.displays = [this.display];
-        GameWorld.world.addBody(this.body);
+        GameWorld.addPhysicsObject(this);        
+        super.init();
     }
 
     abstract options() : any;
@@ -207,9 +258,21 @@ abstract class PhysicsObject extends GameObject {
         this.body.displays = [];
         this.body = null;        
     }
+
+    onImpact(mated:PhysicsObject) : boolean {
+        return true;
+    }
+
+    onEndContact(mated:PhysicsObject, myShape:p2.Shape, matedShape:p2.Shape) : boolean {
+        return true;
+    }
+
+    onBeginContact(mated:PhysicsObject, myShape:p2.Shape, matedShape:p2.Shape) : boolean {
+        return true;
+    }
 }
 
-class TimaeGauge extends GameObject {
+class TimeGauge extends GameObject {
     private restTimeMiliseconds = 0;
     private courseOut = false;
     
@@ -245,12 +308,12 @@ class TimaeGauge extends GameObject {
         this.courseOut  = true;
     }
 
-    process(deltaMilliseconds:number) {
+    process() {
         if (this.courseOut) {
-            this.restTimeMiliseconds -= deltaMilliseconds * 3;           
+            this.restTimeMiliseconds -= 3000;           
             this.courseOut  = false;
         } else {
-            this.restTimeMiliseconds -= deltaMilliseconds;
+            this.restTimeMiliseconds -= 1000 / FPS;
         }
         this.resetDisplay();
     }
@@ -296,8 +359,8 @@ class Ball extends PhysicsObject {
         this.body.position[0] = this.bx;
         this.body.angle = 0;
         if (this.toUp) {
-            this.body.applyForceLocal([0, 500 * this.toUp],[0,0]);
-            this.toUp = 0;
+           this.body.applyForceLocal([0, 500 * this.toUp],[0,0]);
+           this.toUp = 0;
         }
     }
 
@@ -312,21 +375,70 @@ class Ball extends PhysicsObject {
         shape.graphics.endFill();
         return shape;
     }
+
+    onImpact(mated:PhysicsObject) {
+        if (mated.id === ground.id) {
+            timeGauge.reduceByCourseOut();
+            return false;
+        }
+        return true;
+    }
+
+    private toPassBasket = 0;
+    private toPassBasketSide = 0;
+
+    onEndContact(mated:PhysicsObject, myShape:p2.Shape, matedShape:p2.Shape) : boolean {
+        if (!(mated instanceof Basket)) {
+            return true;
+        }
+        this.toPassBasket = 0;
+        const hit = mated.hit(matedShape, this.body.position);
+        if (hit === 0) {
+            return false;
+        }
+        if (hit === this.toPassBasketSide) {
+            console.log(`XXXXX TOUCH ${mated.id}(${hit})`);
+            return false;
+        }
+        console.log(`OOOOO PASS ${mated.id}(${hit})`);
+
+        return false;
+    }
+
+    onBeginContact(mated:PhysicsObject, myShape:p2.Shape, matedShape:p2.Shape) : boolean {
+        if (!(mated instanceof Basket)) {
+            return true;
+        }
+        const hit = mated.hit(matedShape, this.body.position);
+        if (hit === 0) {
+            return false;
+        }      
+        this.toPassBasket = mated.id;
+        this.toPassBasketSide = hit;
+        return false;
+    }
 }
 
 class Ground extends PhysicsObject {
     options() {
-        return {position:[0, 1],type: p2.Body.STATIC};
+        return {position:[GameWorld.stageWidthMeter / 2, 0],type: p2.Body.STATIC};
     }
 
-    createShape() : p2.Shape {
-        return new p2.Plane({angle: Math.PI});
+    addShapeToBody() {
+        const w = GameWorld.stageWidthMeter;
+        this.body.addShape(new p2.Box({width: w, height: 1}),[0,0.5]);
+        this.body.addShape(new p2.Box({width: w, height: 1}),[0,GameWorld.stageHeightMeter- 0.5]);
+        this.body.damping = 1;
     }
 
     createDisplay(): egret.DisplayObject {
+        const w= GameWorld.stageWidth;
+        const h = GameWorld.meterToPixel(1);
         const shape = new egret.Shape();
-        shape.graphics.beginFill(0x400000);
-        shape.graphics.drawRect(0,0, GameWorld.stageWidth, GameWorld.meterToPixel(1));
+        const g = shape.graphics;
+        g.beginFill(0x400000);
+        g.drawRect(-w / 2, - h, w, h);
+        g.drawRect(-w / 2, - GameWorld.stageHeight, w, h);
         shape.graphics.endFill();
         return shape;
     }
@@ -335,11 +447,24 @@ class Ground extends PhysicsObject {
     }
 }
 
+class BasketManager extends GameObject {
+    private lastBasketCreation = 2000;
+
+    process() {
+        this.lastBasketCreation += 1000 / FPS;
+        const gn = Math.random();
+        if (2000 < this.lastBasketCreation && gn < 0.05) {
+            new Basket();
+            this.lastBasketCreation = 0;
+        }  
+    }
+}
 
 class Basket extends PhysicsObject {
     private lengthMeter: number;
     private halfLengthMeter: number;
     private velocityX: number;
+    private line: p2.Line;
 
     constructor() {
         super();
@@ -349,7 +474,8 @@ class Basket extends PhysicsObject {
     }
 
     options() {
-        return {gravityScale:0, mass: 40, position: [10, random(2,7)], velocity:[this.velocityX ,0] };
+        const y= random(2,7);
+        return {gravityScale:0, mass: 40, position: [10, y], velocity:[this.velocityX ,0] };
     }
 
     createDisplay() : egret.Shape  {
@@ -374,8 +500,12 @@ class Basket extends PhysicsObject {
     addShapeToBody() {
         let left = new p2.Circle({ radius: BASKET_SIZE_METER });
         let right = new p2.Circle({ radius: BASKET_SIZE_METER });
+        this.line = new p2.Line({length: this.halfLengthMeter * 2});
+        this.line.sensor = true;
+
         this.body.addShape(left, [- this.halfLengthMeter, 0]);   
         this.body.addShape(right, [+ this.halfLengthMeter, 0]);       
+        this.body.addShape(this.line, [0,0]);
     }
 
     process() {
@@ -384,4 +514,19 @@ class Basket extends PhysicsObject {
         }
     }
 
+    hit(shape: p2.Shape, ballPosition: number[]) : number {
+        if (shape.id !== this.line.id) {
+            return 0;
+        }
+        const a = this.body.angle;
+        const ax = Math.cos(a);
+        const ay = Math.sin(a);
+        const bx = ballPosition[0] - this.body.position[0];
+        const by = ballPosition[1] - this.body.position[1];
+        const z=  ax * by - ay * bx;
+        if (z < 0) {
+            return 1;
+        }
+        return -1;
+    }
 }

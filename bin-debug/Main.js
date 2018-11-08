@@ -10,6 +10,10 @@ r.prototype = e.prototype, t.prototype = new r();
 };
 var BASKET_SIZE_METER = 0.15;
 var BALL_SIZE_METER = 0.6;
+var FPS = 60;
+var ground;
+var timeGauge;
+var ball;
 var Main = (function (_super) {
     __extends(Main, _super);
     function Main() {
@@ -21,20 +25,13 @@ var Main = (function (_super) {
         var ballPixel = egret.MainContext.instance.stage.stageWidth / 10;
         GameWorld.init(ballPixel / BALL_SIZE_METER, this.stage);
         new Sky();
-        new Ground();
-        var timeGauge = new TimaeGauge();
+        ground = new Ground();
+        timeGauge = new TimeGauge();
         timeGauge.reset();
-        var ball = new Ball();
+        ball = new Ball();
         this.stage.addEventListener(egret.TouchEvent.TOUCH_BEGIN, function (e) { return ball.up(); }, this);
-        var lastBasketCreation = 2000;
-        GameWorld.start(function (dt) {
-            lastBasketCreation += dt;
-            var gn = Math.random();
-            if (2000 < lastBasketCreation && gn < 0.05) {
-                new Basket();
-                lastBasketCreation = 0;
-            }
-        });
+        var basketManager = new BasketManager();
+        GameWorld.start();
     };
     return Main;
 }(egret.DisplayObjectContainer));
@@ -45,6 +42,13 @@ function random(min, max) {
 var GameWorld = (function () {
     function GameWorld() {
     }
+    GameWorld.addGameObject = function (o) {
+        this.objects.push(o);
+    };
+    GameWorld.addPhysicsObject = function (o) {
+        this.world.addBody(o.body);
+        this.physicsObjects[o.id] = o;
+    };
     GameWorld.pixelToMeter = function (pixel) {
         return pixel / this.pixelPerMeter;
     };
@@ -70,15 +74,40 @@ var GameWorld = (function () {
         world.gravity = [0, -9.8];
         this.world = world;
     };
-    GameWorld.start = function (globalProcess) {
+    GameWorld.start = function () {
         var _this = this;
-        var loop = function (deltaTime) {
-            if (deltaTime < 10) {
+        this.world.on("impact", function (evt) {
+            var a = _this.physicsObjects[evt.bodyA.id];
+            var b = _this.physicsObjects[evt.bodyB.id];
+            if (a.onImpact(b) === false) {
                 return;
             }
-            if (deltaTime > 1000) {
+            if (b.onImpact(a) === false) {
                 return;
             }
+        });
+        this.world.on("beginContact", function (evt) {
+            var a = _this.physicsObjects[evt.bodyA.id];
+            var b = _this.physicsObjects[evt.bodyB.id];
+            if (a.onBeginContact(b, evt.shapeA, evt.shapeB) === false) {
+                return;
+            }
+            if (b.onBeginContact(a, evt.shapeB, evt.shapeA) === false) {
+                return;
+            }
+        });
+        this.world.on("endContact", function (evt) {
+            var a = _this.physicsObjects[evt.bodyA.id];
+            var b = _this.physicsObjects[evt.bodyB.id];
+            if (a.onEndContact(b, evt.shapeA, evt.shapeB) === false) {
+                return;
+            }
+            if (b.onEndContact(a, evt.shapeB, evt.shapeA) === false) {
+                return;
+            }
+        });
+        var loop = function (e) {
+            var deltaTime = 1000 / FPS;
             _this.world.step(1 / 60, deltaTime / 1000, 10);
             var l = _this.objects.length;
             for (var i = 0; i < l; i++) {
@@ -91,11 +120,8 @@ var GameWorld = (function () {
             for (var i = 0; i < l; i++) {
                 var o = _this.objects[i];
                 if (o.inited && !o.toDelete) {
-                    o.process(deltaTime);
+                    o.process();
                 }
-            }
-            if (globalProcess) {
-                globalProcess(deltaTime);
             }
             for (var i = 0; i < l; i++) {
                 var o = _this.objects[i];
@@ -118,9 +144,10 @@ var GameWorld = (function () {
                 return false;
             });
         };
-        egret.Ticker.getInstance().register(loop, this.displayObjectContainer);
+        this.displayObjectContainer.addEventListener(egret.Event.ENTER_FRAME, loop, this);
     };
     GameWorld.objects = [];
+    GameWorld.physicsObjects = {};
     return GameWorld;
 }());
 __reflect(GameWorld.prototype, "GameWorld");
@@ -128,7 +155,7 @@ var GameObject = (function () {
     function GameObject() {
         this.toDelete = false;
         this.inited = false;
-        GameWorld.objects.push(this);
+        GameWorld.addGameObject(this);
     }
     GameObject.prototype.init = function () {
         this.resetDisplay();
@@ -140,7 +167,12 @@ var GameObject = (function () {
             this.display = null;
         }
         this.display = this.createDisplay();
-        GameWorld.displayObjectContainer.addChild(this.display);
+        if (this.display) {
+            GameWorld.displayObjectContainer.addChild(this.display);
+        }
+    };
+    GameObject.prototype.createDisplay = function () {
+        return null;
     };
     GameObject.prototype.update = function () { };
     GameObject.prototype.markToDelete = function () {
@@ -157,12 +189,19 @@ var PhysicsObject = (function (_super) {
     function PhysicsObject() {
         return _super.call(this) || this;
     }
+    Object.defineProperty(PhysicsObject.prototype, "id", {
+        get: function () {
+            return this.body.id;
+        },
+        enumerable: true,
+        configurable: true
+    });
     PhysicsObject.prototype.init = function () {
-        _super.prototype.init.call(this);
         this.body = new p2.Body(this.options());
         this.addShapeToBody();
         this.body.displays = [this.display];
-        GameWorld.world.addBody(this.body);
+        GameWorld.addPhysicsObject(this);
+        _super.prototype.init.call(this);
     };
     PhysicsObject.prototype.addShapeToBody = function () {
         var shape = this.createShape();
@@ -187,57 +226,65 @@ var PhysicsObject = (function (_super) {
         this.body.displays = [];
         this.body = null;
     };
+    PhysicsObject.prototype.onImpact = function (mated) {
+        return true;
+    };
+    PhysicsObject.prototype.onEndContact = function (mated, myShape, matedShape) {
+        return true;
+    };
+    PhysicsObject.prototype.onBeginContact = function (mated, myShape, matedShape) {
+        return true;
+    };
     return PhysicsObject;
 }(GameObject));
 __reflect(PhysicsObject.prototype, "PhysicsObject");
-var TimaeGauge = (function (_super) {
-    __extends(TimaeGauge, _super);
-    function TimaeGauge() {
+var TimeGauge = (function (_super) {
+    __extends(TimeGauge, _super);
+    function TimeGauge() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.restTimeMiliseconds = 0;
         _this.courseOut = false;
         return _this;
     }
-    TimaeGauge.prototype.reset = function () {
+    TimeGauge.prototype.reset = function () {
         this.restTimeMiliseconds = 60 * 1000;
         this.courseOut = false;
     };
-    TimaeGauge.prototype.createDisplay = function () {
+    TimeGauge.prototype.createDisplay = function () {
         var sprite = new egret.Sprite();
         var g = sprite.graphics;
         g.clear();
-        if (this.isTimeOver()) {
-            return;
+        if (!this.isTimeOver()) {
+            g.lineStyle(0);
+            g.beginFill(0x0000ff, 0.8);
+            g.drawRect(0, 0, GameWorld.stageWidth * this.restTimeMiliseconds / 60 / 1000, 30);
+            g.endFill();
         }
-        g.lineStyle(0);
-        g.beginFill(0x0000ff, 0.8);
-        g.drawRect(0, 0, GameWorld.stageWidth * this.restTimeMiliseconds / 60 / 1000, 30);
-        g.endFill();
         g.lineStyle(2, 0xffffff, 0.8);
         g.beginFill(0x8080ff, 0);
         g.drawRect(0, 0, GameWorld.stageWidth, 30);
         g.endFill();
         return sprite;
     };
-    TimaeGauge.prototype.isTimeOver = function () {
+    TimeGauge.prototype.isTimeOver = function () {
         return this.restTimeMiliseconds <= 0;
     };
-    TimaeGauge.prototype.reduceByCourseOut = function () {
+    TimeGauge.prototype.reduceByCourseOut = function () {
         this.courseOut = true;
     };
-    TimaeGauge.prototype.process = function (deltaMilliseconds) {
+    TimeGauge.prototype.process = function () {
         if (this.courseOut) {
-            this.restTimeMiliseconds -= deltaMilliseconds * 3;
+            this.restTimeMiliseconds -= 3000;
             this.courseOut = false;
         }
         else {
-            this.restTimeMiliseconds -= deltaMilliseconds;
+            this.restTimeMiliseconds -= 1000 / FPS;
         }
         this.resetDisplay();
     };
-    return TimaeGauge;
+    return TimeGauge;
 }(GameObject));
-__reflect(TimaeGauge.prototype, "TimaeGauge");
+__reflect(TimeGauge.prototype, "TimeGauge");
 var Sky = (function (_super) {
     __extends(Sky, _super);
     function Sky() {
@@ -264,6 +311,8 @@ var Ball = (function (_super) {
     function Ball() {
         var _this = _super.call(this) || this;
         _this.toUp = 0;
+        _this.toPassBasket = 0;
+        _this.toPassBasketSide = 0;
         _this.bx = GameWorld.stageWidthMeter / 4;
         return _this;
     }
@@ -291,6 +340,41 @@ var Ball = (function (_super) {
         shape.graphics.endFill();
         return shape;
     };
+    Ball.prototype.onImpact = function (mated) {
+        if (mated.id === ground.id) {
+            timeGauge.reduceByCourseOut();
+            return false;
+        }
+        return true;
+    };
+    Ball.prototype.onEndContact = function (mated, myShape, matedShape) {
+        if (!(mated instanceof Basket)) {
+            return true;
+        }
+        this.toPassBasket = 0;
+        var hit = mated.hit(matedShape, this.body.position);
+        if (hit === 0) {
+            return false;
+        }
+        if (hit === this.toPassBasketSide) {
+            console.log("XXXXX TOUCH " + mated.id + "(" + hit + ")");
+            return false;
+        }
+        console.log("OOOOO PASS " + mated.id + "(" + hit + ")");
+        return false;
+    };
+    Ball.prototype.onBeginContact = function (mated, myShape, matedShape) {
+        if (!(mated instanceof Basket)) {
+            return true;
+        }
+        var hit = mated.hit(matedShape, this.body.position);
+        if (hit === 0) {
+            return false;
+        }
+        this.toPassBasket = mated.id;
+        this.toPassBasketSide = hit;
+        return false;
+    };
     return Ball;
 }(PhysicsObject));
 __reflect(Ball.prototype, "Ball");
@@ -300,15 +384,22 @@ var Ground = (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     Ground.prototype.options = function () {
-        return { position: [0, 1], type: p2.Body.STATIC };
+        return { position: [GameWorld.stageWidthMeter / 2, 0], type: p2.Body.STATIC };
     };
-    Ground.prototype.createShape = function () {
-        return new p2.Plane({ angle: Math.PI });
+    Ground.prototype.addShapeToBody = function () {
+        var w = GameWorld.stageWidthMeter;
+        this.body.addShape(new p2.Box({ width: w, height: 1 }), [0, 0.5]);
+        this.body.addShape(new p2.Box({ width: w, height: 1 }), [0, GameWorld.stageHeightMeter - 0.5]);
+        this.body.damping = 1;
     };
     Ground.prototype.createDisplay = function () {
+        var w = GameWorld.stageWidth;
+        var h = GameWorld.meterToPixel(1);
         var shape = new egret.Shape();
-        shape.graphics.beginFill(0x400000);
-        shape.graphics.drawRect(0, 0, GameWorld.stageWidth, GameWorld.meterToPixel(1));
+        var g = shape.graphics;
+        g.beginFill(0x400000);
+        g.drawRect(-w / 2, -h, w, h);
+        g.drawRect(-w / 2, -GameWorld.stageHeight, w, h);
         shape.graphics.endFill();
         return shape;
     };
@@ -317,6 +408,24 @@ var Ground = (function (_super) {
     return Ground;
 }(PhysicsObject));
 __reflect(Ground.prototype, "Ground");
+var BasketManager = (function (_super) {
+    __extends(BasketManager, _super);
+    function BasketManager() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.lastBasketCreation = 2000;
+        return _this;
+    }
+    BasketManager.prototype.process = function () {
+        this.lastBasketCreation += 1000 / FPS;
+        var gn = Math.random();
+        if (2000 < this.lastBasketCreation && gn < 0.05) {
+            new Basket();
+            this.lastBasketCreation = 0;
+        }
+    };
+    return BasketManager;
+}(GameObject));
+__reflect(BasketManager.prototype, "BasketManager");
 var Basket = (function (_super) {
     __extends(Basket, _super);
     function Basket() {
@@ -327,7 +436,8 @@ var Basket = (function (_super) {
         return _this;
     }
     Basket.prototype.options = function () {
-        return { gravityScale: 0, mass: 40, position: [10, random(2, 7)], velocity: [this.velocityX, 0] };
+        var y = random(2, 7);
+        return { gravityScale: 0, mass: 40, position: [10, y], velocity: [this.velocityX, 0] };
     };
     Basket.prototype.createDisplay = function () {
         var lx = GameWorld.xMeterToPixel((0 - this.halfLengthMeter));
@@ -346,13 +456,31 @@ var Basket = (function (_super) {
     Basket.prototype.addShapeToBody = function () {
         var left = new p2.Circle({ radius: BASKET_SIZE_METER });
         var right = new p2.Circle({ radius: BASKET_SIZE_METER });
+        this.line = new p2.Line({ length: this.halfLengthMeter * 2 });
+        this.line.sensor = true;
         this.body.addShape(left, [-this.halfLengthMeter, 0]);
         this.body.addShape(right, [+this.halfLengthMeter, 0]);
+        this.body.addShape(this.line, [0, 0]);
     };
     Basket.prototype.process = function () {
         if (this.body && this.body.position[0] < -1) {
             this.markToDelete();
         }
+    };
+    Basket.prototype.hit = function (shape, ballPosition) {
+        if (shape.id !== this.line.id) {
+            return 0;
+        }
+        var a = this.body.angle;
+        var ax = Math.cos(a);
+        var ay = Math.sin(a);
+        var bx = ballPosition[0] - this.body.position[0];
+        var by = ballPosition[1] - this.body.position[1];
+        var z = ax * by - ay * bx;
+        if (z < 0) {
+            return 1;
+        }
+        return -1;
     };
     return Basket;
 }(PhysicsObject));
