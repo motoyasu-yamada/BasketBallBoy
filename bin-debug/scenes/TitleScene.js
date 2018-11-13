@@ -12,24 +12,18 @@ var TitleScene = (function (_super) {
     __extends(TitleScene, _super);
     function TitleScene() {
         var _this = _super.call(this) || this;
-        _this.once(egret.Event.ADDED_TO_STAGE, _this.onAddToStage, _this);
+        _this.addEventListener(eui.UIEvent.COMPLETE, _this.uiCompHandler, _this);
+        _this.skinName = "resource/custom_skins/TitleScene.exml";
         return _this;
     }
-    TitleScene.prototype.onAddToStage = function () {
+    TitleScene.prototype.uiCompHandler = function () {
         var _this = this;
-        this.textField = new egret.TextField();
-        this.textField.text = "Touch To Start";
-        this.addChild(this.textField);
-        this.textField.y = 300;
-        this.textField.width = 480;
-        this.textField.height = 100;
-        this.textField.textAlign = "center";
-        this.parent.once(egret.TouchEvent.TOUCH_BEGIN, function (e) {
+        this.addEventListener(egret.TouchEvent.TOUCH_TAP, function (evt) {
             _this.parent.addChild(new GameScene());
             _this.parent.removeChild(_this);
         }, this);
     };
     return TitleScene;
-}(egret.Sprite));
-__reflect(TitleScene.prototype, "TitleScene");
+}(eui.Component));
+__reflect(TitleScene.prototype, "TitleScene", ["eui.UIComponent", "egret.DisplayObject"]);
 //# sourceMappingURL=TitleScene.js.map

@@ -1,0 +1,22 @@
+{
+    "global": {
+        "gridColor": 8421504,
+        "gridEnabled": false,
+        "gridSize": 20,
+        "globalAdsorbEnable": false,
+        "globalRulerEnable": true
+    },
+    "166f1f5a418": {
+        "guideLinesEnabled": true
+    },
+    "1670ba1839b": {
+        "path": "..\\resource\\custom_skins\\GameOverScene.ts",
+        "class": "GameOverScene",
+        "parentPath": ""
+    },
+    "1670c02f25e": {
+        "path": "..\\resource\\custom_skins\\TitleScene.ts",
+        "class": "TitleScene",
+        "parentPath": ""
+    }
+}

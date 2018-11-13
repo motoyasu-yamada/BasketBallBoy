@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<e:Skin class="TitleSceneSkin" width="640" height="1136" xmlns:e="http://ns.egret.com/eui" xmlns:w="http://ns.egret.com/wing" >
+	<w:Config id="1670c02f25e" ></w:Config>
+	<e:Rect width="640" height="1138" x="0" y="0" locked="true"/>
+	<e:Label text="BasketBallBoy" y="350" size="64" bold="true" x="96"/>
+	<e:Label text="(C) Liberapp Inc" y="1062.67" size="24" textColor="0x333333" x="234"/>
+	<e:Label text="TAP TO START" y="717.34" size="48" textColor="0x333333" x="152"/>
+</e:Skin>

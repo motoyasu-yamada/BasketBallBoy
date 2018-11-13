@@ -26,7 +26,11 @@
     },
     {
       "name": "physics",
-      "path": "../libsrc"
+      "path": "../egret-game-library-master/physics/libsrc"
+    },
+    {
+      "name": "particle",
+      "path": "../egret-game-library-master/particle/libsrc"
     }
   ],
   "targets": {
