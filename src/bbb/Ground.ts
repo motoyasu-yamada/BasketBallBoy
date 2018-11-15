@@ -19,7 +19,7 @@ class Ground extends PhysicsObject {
 		const h = GameWorld.meterToPixel(1);
 		const shape = new egret.Shape();
 		const g = shape.graphics;
-		g.beginFill(0x400000);
+		g.beginFill(Palette.Ground);
 		g.drawRect(-w / 2, - h, w, h);
 		g.drawRect(-w / 2, - GameWorld.stageHeight, w, h);
 		shape.graphics.endFill();

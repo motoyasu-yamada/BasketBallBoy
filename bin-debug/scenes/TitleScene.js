@@ -19,6 +19,7 @@ var TitleScene = (function (_super) {
     TitleScene.prototype.uiCompHandler = function () {
         var _this = this;
         this.addEventListener(egret.TouchEvent.TOUCH_TAP, function (evt) {
+            SoundManager.playButtonPressed();
             _this.parent.addChild(new GameScene());
             _this.parent.removeChild(_this);
         }, this);

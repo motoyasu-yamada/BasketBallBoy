@@ -22,13 +22,15 @@ class Basket extends PhysicsObject {
 
 		const shape = new egret.Shape();
 		const g = shape.graphics;
-		g.beginFill(0xffff00, 1);
-		g.drawCircle(lx, 0, GameWorld.meterToPixel(BASKET_SIZE_METER));
-		g.drawCircle(rx, 0, GameWorld.meterToPixel(BASKET_SIZE_METER));
-
-		g.lineStyle(5, 0xfff000, 0.5);
+		g.beginFill(Palette.BasketRim, 1);
+		
+		g.lineStyle(5, Palette.BasketNet);
 		g.moveTo(lx, 0);
 		g.lineTo(rx, 0);
+
+		g.lineStyle(5,Palette.BasketRimBorder);
+		g.drawCircle(lx, 0, GameWorld.meterToPixel(BASKET_SIZE_METER));
+		g.drawCircle(rx, 0, GameWorld.meterToPixel(BASKET_SIZE_METER));
 
 		g.endFill();
 

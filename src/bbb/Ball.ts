@@ -3,10 +3,15 @@
 class Ball extends PhysicsObject {
 	private bx: number;
 	private toUp: number = 0;
+	private particle:particle.GravityParticleSystem;
 
 	constructor() {
 		super("Ball");
 		this.bx = GameWorld.stageWidthMeter / 4;
+		
+		const texture = RES.getRes("particle_png");
+		const config = RES.getRes("particle_json");
+		this.particle = new particle.GravityParticleSystem(texture,config);
 	}
 
 	options() {
@@ -14,7 +19,6 @@ class Ball extends PhysicsObject {
 	}
 
 	up() {
-		console.log("UP");
 		this.toUp++;
 	}
 
@@ -33,7 +37,8 @@ class Ball extends PhysicsObject {
 
 	createDisplay(): egret.DisplayObject {
 		const shape = new egret.Shape();
-		shape.graphics.beginFill(0xff0000);
+		shape.graphics.beginFill(Palette.Ball);
+		shape.graphics.lineStyle(5,Palette.BallBorder);
 		shape.graphics.drawCircle(0, 0, GameWorld.meterToPixel(BALL_SIZE_METER / 2));
 		shape.graphics.endFill();
 		return shape;
@@ -66,8 +71,12 @@ class Ball extends PhysicsObject {
 			return false;
 		}
 		console.log(`OOOOO PASS ${mated.id}(${hit})`);
+
+		this.createEffect();
+
 		const scoreUi = GameWorld.getGameObject<ScoreUi>("ScoreUi");
 		scoreUi.countup();
+		SoundManager.playSuccess();
 
 		return false;
 	}
@@ -85,25 +94,12 @@ class Ball extends PhysicsObject {
 		return false;
 	}
 
+
 	createEffect()
 	{
-		const effect = new egret.Shape();
-		effect.graphics.beginFill(0xffffff,0.5);
-		effect.graphics.drawRect(0,0,8,8);
-		effect.graphics.endFill();
-
-		const texture = new egret.RenderTexture();
-		texture.drawToTexture(effect);
-
-        const system = new particle.GravityParticleSystem(texture,{});
-		this.display.parent.addChild(system);
-		system.emissionTime = 3000;
-		system.emissionRate = 200;
-        system.start();
-        system.y = this.display.y;
-        system.x = this.display.x;
-        system.emitterX = 0
-        system.emitterY = 0;
-        system.scaleX = system.scaleY = 1.5;		
+		this.particle.emitterX = this.egretX;
+		this.particle.emitterY = this.egretY;
+		this.display.parent.addChild(this.particle);
+		this.particle.start(500);
 	}
 }

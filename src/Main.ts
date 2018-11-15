@@ -11,6 +11,7 @@ class Main extends egret.DisplayObjectContainer {
                 this.stage.addChild(loadingScene);
                 await RES.loadConfig("resource/default.res.json", "resource/");
                 await RES.loadGroup("preload", 0, loadingScene);
+                SoundManager.init();
                 this.stage.removeChild(loadingScene);   
             } catch(e) {
                 console.error(e);

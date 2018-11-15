@@ -13,6 +13,7 @@ class GameOverScene extends eui.Component implements  eui.UIComponent {
 		this.lastScoreLabel.text = `${this.lastScore}`;
 
         this.addEventListener( egret.TouchEvent.TOUCH_TAP, ( evt:egret.TouchEvent )=>{
+            SoundManager.playButtonPressed();
             GameMain.destroy();
             this.parent.addChild(new TitleScene());
             this.parent.removeChild(this);            

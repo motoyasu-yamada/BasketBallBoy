@@ -41,10 +41,45 @@ var PhysicsObject = (function (_super) {
         if (!display) {
             return;
         }
-        display.x = GameWorld.xMeterToPixel(body.position[0]);
-        display.y = GameWorld.yMeterToPixel(body.position[1]);
-        display.rotation = 360 - (body.angle + body.shapes[0].angle) * 180 / Math.PI;
+        display.x = this.egretX;
+        display.y = this.egretY;
+        display.rotation = this.egretAngel;
     };
+    Object.defineProperty(PhysicsObject.prototype, "meterX", {
+        get: function () {
+            return this.body.position[0];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PhysicsObject.prototype, "meterY", {
+        get: function () {
+            return this.body.position[1];
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PhysicsObject.prototype, "egretX", {
+        get: function () {
+            return GameWorld.xMeterToPixel(this.meterX);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PhysicsObject.prototype, "egretY", {
+        get: function () {
+            return GameWorld.yMeterToPixel(this.meterY);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(PhysicsObject.prototype, "egretAngel", {
+        get: function () {
+            return (this.body.angle + this.body.shapes[0].angle) * 180 / Math.PI;
+        },
+        enumerable: true,
+        configurable: true
+    });
     PhysicsObject.prototype.delete = function () {
         _super.prototype.delete.call(this);
         if (this.body) {

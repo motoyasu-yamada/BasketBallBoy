@@ -27,7 +27,7 @@ var Ground = (function (_super) {
         var h = GameWorld.meterToPixel(1);
         var shape = new egret.Shape();
         var g = shape.graphics;
-        g.beginFill(0x400000);
+        g.beginFill(Palette.Ground);
         g.drawRect(-w / 2, -h, w, h);
         g.drawRect(-w / 2, -GameWorld.stageHeight, w, h);
         shape.graphics.endFill();

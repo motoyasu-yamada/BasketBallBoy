@@ -6,14 +6,11 @@ class GameMain
 {
     public static destroy() 
     {
-        console.log("+++++++++++++ GameMain#destory");
         GameWorld.destroy();
     }
 
     public static start(stage:egret.Stage, onGameOver:()=>void) 
     {
-        console.log("+++++++++++++ GameMain#start");
-
 		const ballPixel = egret.MainContext.instance.stage.stageWidth / 10;
 		GameWorld.init(ballPixel / BALL_SIZE_METER, stage);
 
@@ -29,6 +26,7 @@ class GameMain
 		const basketManager = new BasketManager();
 
         GameWorld.on("gameover",() => {
+            SoundManager.playGameOver();
             GameWorld.pause();
             onGameOver();
         });

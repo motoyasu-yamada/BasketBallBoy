@@ -5,13 +5,18 @@ class Sky extends GameObject {
 		const sprite = new egret.Sprite();
 		const g = sprite.graphics;
 		g.clear();
-		g.beginFill(0x8080ff, 1);
+
+		g.beginFill(Palette.BackgroundA);
 		g.drawRect(0, 0, GameWorld.stageWidth, GameWorld.stageHeight);
 		g.endFill();
 
-		g.beginFill(0xc0c0ff);
-		g.drawCircle(0, 0, GameWorld.stageWidth);
+		const bw = GameWorld.stageWidth / 6;
+		g.beginFill(Palette.BackgroundB);
+		for (let i = 0; i < 6; i ++) {
+			g.drawRect(bw * i, 0, bw / 2, GameWorld.stageHeight);
+		}
 		g.endFill();
+
 		return sprite;
 	}
 

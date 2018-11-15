@@ -21,6 +21,7 @@ var GameOverScene = (function (_super) {
         var _this = this;
         this.lastScoreLabel.text = "" + this.lastScore;
         this.addEventListener(egret.TouchEvent.TOUCH_TAP, function (evt) {
+            SoundManager.playButtonPressed();
             GameMain.destroy();
             _this.parent.addChild(new TitleScene());
             _this.parent.removeChild(_this);

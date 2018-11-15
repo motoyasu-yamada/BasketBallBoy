@@ -8,6 +8,7 @@ class TitleScene extends eui.Component implements  eui.UIComponent {
 
     private uiCompHandler():void {
         this.addEventListener( egret.TouchEvent.TOUCH_TAP, ( evt:egret.TouchEvent )=>{
+            SoundManager.playButtonPressed();
             this.parent.addChild(new GameScene());
             this.parent.removeChild(this);            
         }, this );

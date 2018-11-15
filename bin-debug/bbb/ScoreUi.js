@@ -31,10 +31,11 @@ var ScoreUi = (function (_super) {
     };
     ScoreUi.prototype.createDisplay = function () {
         this.textField = new egret.TextField();
-        this.textField.x = 50;
-        this.textField.y = 100;
-        this.textField.size = 30;
-        this.textField.textColor = 0xffffff;
+        this.textField.x = GameWorld.stageWidth / 2;
+        this.textField.y = 120;
+        this.textField.size = 60;
+        this.textField.textAlign = "center";
+        this.textField.textColor = Palette.Score;
         return this.textField;
     };
     ScoreUi.prototype.process = function () {

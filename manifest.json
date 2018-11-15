@@ -19,14 +19,16 @@
 		"bin-debug/bbb/Ball.js",
 		"bin-debug/bbb/Basket.js",
 		"bin-debug/bbb/BasketManager.js",
+		"bin-debug/bbb/GameMain.js",
 		"bin-debug/GameWorld.js",
-		"bin-debug/bbb/globals.js",
 		"bin-debug/bbb/Ground.js",
+		"bin-debug/bbb/Palette.js",
 		"bin-debug/bbb/ScoreUi.js",
 		"bin-debug/bbb/Sky.js",
+		"bin-debug/bbb/SoundManager.js",
 		"bin-debug/bbb/TimeGauge.js",
 		"bin-debug/scenes/GameOverScene.js",
 		"bin-debug/scenes/GameScene.js",
-		"bin-debug/bbb/GameMain.js"
+		"bin-debug/bbb/globals.js"
 	]
 }

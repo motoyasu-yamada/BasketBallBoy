@@ -16,13 +16,15 @@ var Ball = (function (_super) {
         _this.toPassBasket = 0;
         _this.toPassBasketSide = 0;
         _this.bx = GameWorld.stageWidthMeter / 4;
+        var texture = RES.getRes("particle_png");
+        var config = RES.getRes("particle_json");
+        _this.particle = new particle.GravityParticleSystem(texture, config);
         return _this;
     }
     Ball.prototype.options = function () {
         return { mass: 1, force: [0, -300], position: [this.bx, GameWorld.stageHeightMeter / 2] };
     };
     Ball.prototype.up = function () {
-        console.log("UP");
         this.toUp++;
     };
     Ball.prototype.process = function () {
@@ -38,7 +40,8 @@ var Ball = (function (_super) {
     };
     Ball.prototype.createDisplay = function () {
         var shape = new egret.Shape();
-        shape.graphics.beginFill(0xff0000);
+        shape.graphics.beginFill(Palette.Ball);
+        shape.graphics.lineStyle(5, Palette.BallBorder);
         shape.graphics.drawCircle(0, 0, GameWorld.meterToPixel(BALL_SIZE_METER / 2));
         shape.graphics.endFill();
         return shape;
@@ -66,8 +69,10 @@ var Ball = (function (_super) {
             return false;
         }
         console.log("OOOOO PASS " + mated.id + "(" + hit + ")");
+        this.createEffect();
         var scoreUi = GameWorld.getGameObject("ScoreUi");
         scoreUi.countup();
+        SoundManager.playSuccess();
         return false;
     };
     Ball.prototype.onBeginContact = function (mated, myShape, matedShape) {
@@ -83,22 +88,10 @@ var Ball = (function (_super) {
         return false;
     };
     Ball.prototype.createEffect = function () {
-        var effect = new egret.Shape();
-        effect.graphics.beginFill(0xffffff, 0.5);
-        effect.graphics.drawRect(0, 0, 8, 8);
-        effect.graphics.endFill();
-        var texture = new egret.RenderTexture();
-        texture.drawToTexture(effect);
-        var system = new particle.GravityParticleSystem(texture, {});
-        this.display.parent.addChild(system);
-        system.emissionTime = 3000;
-        system.emissionRate = 200;
-        system.start();
-        system.y = this.display.y;
-        system.x = this.display.x;
-        system.emitterX = 0;
-        system.emitterY = 0;
-        system.scaleX = system.scaleY = 1.5;
+        this.particle.emitterX = this.egretX;
+        this.particle.emitterY = this.egretY;
+        this.display.parent.addChild(this.particle);
+        this.particle.start(500);
     };
     return Ball;
 }(PhysicsObject));

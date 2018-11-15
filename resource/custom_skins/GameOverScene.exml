@@ -2,8 +2,8 @@
 <e:Skin class="GameOverSceneSkin" width="640" height="1136" xmlns:e="http://ns.egret.com/eui" xmlns:w="http://ns.egret.com/wing" >
 	<w:Config id="1670ba1839b" ></w:Config>
 	<e:Rect width="640" height="1136" x="0" y="0" anchorOffsetX="0" anchorOffsetY="0" fillAlpha="0.5" locked="true"/>
-	<e:Rect width="470" height="386" x="96" y="362" fillColor="0xffffff" anchorOffsetX="0" anchorOffsetY="0"/>
-	<e:Label text="GameOver" x="169" y="406" textColor="0x333333" size="64" bold="true" textAlign="center"/>
-	<e:Label id="lastScoreLabel" text="000" x="224" y="508" textColor="0x333333" size="128" bold="true" textAlign="center" width="214" height="128"/>
-	<e:Label text="pt" x="301" y="638" textColor="0x333333" size="64" bold="true" textAlign="center"/>
+	<e:Rect width="470" height="386" x="96" y="362" fillColor="0xdfdce3" anchorOffsetX="0" anchorOffsetY="0"/>
+	<e:Label text="GameOver" x="169" y="406" size="64" bold="true" textAlign="center" backgroundColor="0xfc4a1a" borderColor="0xfc4a1a" textColor="0xfc4a1a"/>
+	<e:Label id="lastScoreLabel" text="000" x="224" y="508" size="128" bold="true" textAlign="center" width="214" height="128" textColor="0xfc4a1a"/>
+	<e:Label text="pt" x="301" y="638" size="64" bold="true" textAlign="center" textColor="0xfc4a1a"/>
 </e:Skin>

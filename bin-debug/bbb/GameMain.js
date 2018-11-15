@@ -8,11 +8,9 @@ var GameMain = (function () {
     function GameMain() {
     }
     GameMain.destroy = function () {
-        console.log("+++++++++++++ GameMain#destory");
         GameWorld.destroy();
     };
     GameMain.start = function (stage, onGameOver) {
-        console.log("+++++++++++++ GameMain#start");
         var ballPixel = egret.MainContext.instance.stage.stageWidth / 10;
         GameWorld.init(ballPixel / BALL_SIZE_METER, stage);
         new Sky();
@@ -23,6 +21,7 @@ var GameMain = (function () {
         stage.addEventListener(egret.TouchEvent.TOUCH_BEGIN, function (e) { return ball.up(); }, this);
         var basketManager = new BasketManager();
         GameWorld.on("gameover", function () {
+            SoundManager.playGameOver();
             GameWorld.pause();
             onGameOver();
         });

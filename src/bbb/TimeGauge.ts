@@ -13,17 +13,18 @@ class TimeGauge extends GameObject {
 		const sprite = new egret.Sprite();
 		const g = sprite.graphics;
 		g.clear();
+
+		g.lineStyle(5, Palette.TimeGauge)
+		g.beginFill(0, 0);
+		g.drawRect(30, 30, GameWorld.stageWidth - 60, 60);
+		g.endFill();
+
 		if (!this.isTimeOver()) {
 			g.lineStyle(0);
-			g.beginFill(0x0000ff, 0.8);
-			g.drawRect(0, 0, GameWorld.stageWidth * this.restTimeMiliseconds / this.remainedSecondOnStart  / 1000, 30);
+			g.beginFill(Palette.TimeGauge);
+			g.drawRect(40, 40, (GameWorld.stageWidth - 80) * this.restTimeMiliseconds / this.remainedSecondOnStart  / 1000, 40);
 			g.endFill();
 		}
-
-		g.lineStyle(2, 0xffffff, 0.8)
-		g.beginFill(0x8080ff, 0);
-		g.drawRect(0, 0, GameWorld.stageWidth, 30);
-		g.endFill();
 
 		return sprite;
 	}

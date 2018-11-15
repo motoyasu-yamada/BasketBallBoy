@@ -71,6 +71,7 @@ var Main = (function (_super) {
                                         return [4 /*yield*/, RES.loadGroup("preload", 0, loadingScene)];
                                     case 2:
                                         _a.sent();
+                                        SoundManager.init();
                                         this.stage.removeChild(loadingScene);
                                         return [3 /*break*/, 4];
                                     case 3:
