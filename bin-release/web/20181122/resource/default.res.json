@@ -1,0 +1,40 @@
+{
+	"groups": [
+		{
+			"keys": "btn_mp3,gameover_mp3,success_mp3,particle_png,particle_json",
+			"name": "preload"
+		}
+	],
+	"resources": [
+		{
+			"name": "score_fnt",
+			"type": "font",
+			"url": "assets/score.fnt"
+		},
+		{
+			"name": "btn_mp3",
+			"type": "sound",
+			"url": "assets/btn.mp3"
+		},
+		{
+			"name": "gameover_mp3",
+			"type": "sound",
+			"url": "assets/gameover.mp3"
+		},
+		{
+			"name": "success_mp3",
+			"type": "sound",
+			"url": "assets/success.mp3"
+		},
+		{
+			"name": "particle_png",
+			"type": "image",
+			"url": "assets/particle.png"
+		},
+		{
+			"name": "particle_json",
+			"type": "json",
+			"url": "assets/particle.json"
+		}
+	]
+}
